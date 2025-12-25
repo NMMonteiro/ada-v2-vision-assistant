@@ -1,0 +1,11 @@
+google-genai
+fastapi
+uvicorn
+python-socketio
+opencv-python
+mediapipe
+pillow
+mss
+playwright
+python-dotenv
+pyaudio

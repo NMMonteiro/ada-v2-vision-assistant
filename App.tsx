@@ -59,11 +59,11 @@ const App: React.FC = () => {
       streamRef.current = null;
     }
     if (audioContextInRef.current) {
-      audioContextInRef.current.close();
+      audioContextInRef.current.close().catch(() => { });
       audioContextInRef.current = null;
     }
     if (audioContextOutRef.current) {
-      audioContextOutRef.current.close();
+      audioContextOutRef.current.close().catch(() => { });
       audioContextOutRef.current = null;
     }
     if (sessionRef.current) {
@@ -71,7 +71,6 @@ const App: React.FC = () => {
       sessionRef.current = null;
     }
     setState(prev => ({ ...prev, status: ConnectionStatus.IDLE, isListening: false, isSpeaking: false }));
-    addLog("Disconnected from Ada system.");
   }, []);
 
   const startConnection = async () => {
@@ -79,11 +78,15 @@ const App: React.FC = () => {
       setState(prev => ({ ...prev, status: ConnectionStatus.CONNECTING }));
       addLog("Initializing neural pathways...");
 
-      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY;
+      const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY;
+
       if (!apiKey) {
-        addLog("System failure: GEMINI_API_KEY not found in environment.");
-        throw new Error("GEMINI_API_KEY not found.");
+        const msg = "System failure: GEMINI_API_KEY not found in environment.";
+        addLog(msg);
+        throw new Error(msg);
       }
+
+      addLog(`Key detected: ${apiKey.substring(0, 6)}...`);
 
       const ai = new GoogleGenAI({ apiKey });
 
@@ -97,7 +100,7 @@ const App: React.FC = () => {
       streamRef.current = stream;
 
       const sessionPromise = ai.live.connect({
-        model: 'gemini-2.0-flash-exp',
+        model: 'models/gemini-2.0-flash-exp',
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
@@ -155,11 +158,10 @@ const App: React.FC = () => {
             scriptProcessorRef.current = scriptProcessor;
 
             scriptProcessor.onaudioprocess = (e) => {
+              if (!sessionRef.current) return;
               const inputData = e.inputBuffer.getChannelData(0);
               const pcmBlob = createPcmBlob(inputData);
-              sessionPromise.then(session => {
-                session.sendRealtimeInput({ media: pcmBlob });
-              });
+              sessionRef.current.sendRealtimeInput({ media: pcmBlob });
             };
 
             source.connect(scriptProcessor);
@@ -213,9 +215,9 @@ const App: React.FC = () => {
                 responses.push({ id: call.id, response: { output: result } });
                 setTimeout(() => setState(prev => ({ ...prev, activeTool: undefined })), 2000);
               }
-              sessionPromise.then(session => {
-                session.sendRealtimeInput({ toolResponses: { functionResponses: responses } });
-              });
+              if (sessionRef.current) {
+                sessionRef.current.sendRealtimeInput({ toolResponses: { functionResponses: responses } });
+              }
             }
 
             if (message.serverContent?.interrupted) {
@@ -224,16 +226,20 @@ const App: React.FC = () => {
             }
           },
           onerror: (err) => {
-            console.error(err);
-            addLog("System failure: Neural Link unstable.");
+            console.error("Neural Link Error:", err);
+            addLog(`Link stable issue: ${err.message || 'Unknown error'}`);
             setState(prev => ({ ...prev, status: ConnectionStatus.ERROR }));
           },
-          onclose: () => cleanup()
+          onclose: (ev) => {
+            addLog(`Disconnected: ${ev.reason || 'Normal closure'}`);
+            cleanup();
+          }
         }
       });
       sessionRef.current = await sessionPromise;
     } catch (error: any) {
-      addLog(`System failure: ${error.message}`);
+      console.error("Activation Error:", error);
+      addLog(`Activation failed: ${error.message}`);
       setState(prev => ({ ...prev, status: ConnectionStatus.ERROR }));
       cleanup();
     }

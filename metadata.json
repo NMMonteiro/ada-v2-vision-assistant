@@ -1,0 +1,7 @@
+{
+  "name": "Ada V2 - AI Voice Assistant",
+  "description": "A real-time, voice-interactive AI assistant inspired by Ada V2, powered by Gemini 2.5 Flash for low-latency conversations.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

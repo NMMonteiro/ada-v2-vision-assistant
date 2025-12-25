@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --ada-blue: #60a5fa;
+    --ada-purple: #a78bfa;
+    --ada-bg: #050505;
+}
+
+body {
+    background-color: var(--ada-bg);
+    color: #fff;
+    margin: 0;
+    overflow: hidden;
+}
+
+/* Holographic Scanline Effect */
+.scanlines {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%,
+            rgba(0, 0, 0, 0.25) 50%),
+        linear-gradient(90deg,
+            rgba(255, 0, 0, 0.06),
+            rgba(0, 255, 0, 0.02),
+            rgba(0, 0, 255, 0.06));
+    background-size: 100% 4px, 3px 100%;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0.3;
+}
+
+/* HUD elements animation */
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.hud-ring {
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    position: absolute;
+    pointer-events: none;
+}
+
+.hud-ring-1 {
+    width: 80vw;
+    height: 80vw;
+    max-width: 500px;
+    max-height: 500px;
+    border-top-color: rgba(96, 165, 250, 0.2);
+    animation: rotate 20s linear infinite;
+}
+
+.hud-ring-2 {
+    width: 70vw;
+    height: 70vw;
+    max-width: 450px;
+    max-height: 450px;
+    border-right-color: rgba(167, 139, 250, 0.1);
+    animation: rotate 15s linear reverse infinite;
+}
+
+/* Floating widgets */
+.hud-widget {
+    position: absolute;
+    padding: 1rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.03), transparent);
+}
+
+@media (max-width: 640px) {
+    .hud-widget {
+        display: none;
+    }
+}

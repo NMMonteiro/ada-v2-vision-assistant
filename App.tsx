@@ -201,8 +201,27 @@ const App: React.FC = () => {
                 let result: any = { status: "success" };
 
                 if (call.name === "navigate_to") {
-                  window.open((call.args as any).url, '_blank');
-                  result = { info: `Navigated to ${(call.args as any).url}` };
+                  let url = (call.args as any).url;
+                  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'https://' + url;
+                  }
+
+                  addLog(`Attempting to open: ${url}`);
+                  const win = window.open(url, '_blank');
+
+                  if (!win || win.closed || typeof win.closed === 'undefined') {
+                    addLog("Automatic portal blocked. Manual activation required.");
+                    setState(prev => ({
+                      ...prev,
+                      pendingAction: {
+                        type: 'navigation',
+                        url,
+                        label: `Open ${new URL(url).hostname}`
+                      }
+                    }));
+                  } else {
+                    result = { info: `Successfully opened portal to ${url}` };
+                  }
                 } else if (call.name === "update_interface") {
                   const args = call.args as any;
                   setState(prev => ({ ...prev, themeColor: args.color }));
@@ -287,6 +306,26 @@ const App: React.FC = () => {
           >
             {state.status === ConnectionStatus.CONNECTED ? 'DEACTIVATE' : 'ACTIVATE'}
           </button>
+
+          {state.pendingAction && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <button
+                onClick={() => {
+                  window.open(state.pendingAction!.url, '_blank');
+                  setState(prev => ({ ...prev, pendingAction: undefined }));
+                }}
+                className="group relative px-8 py-3 rounded-xl bg-blue-500/20 border border-blue-500/40 text-blue-300 font-orbitron text-xs tracking-[0.2em] hover:bg-blue-500/30 transition-all active:scale-95"
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  LAUNCH PORTAL: {state.pendingAction.label}
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </span>
+                <div className="absolute inset-0 bg-blue-500/10 blur-xl group-hover:bg-blue-500/20 transition-all rounded-full"></div>
+              </button>
+            </div>
+          )}
 
           <div className="flex items-center gap-8 text-[10px] font-orbitron uppercase text-white/30 tracking-[0.2em]">
             <div className="flex items-center gap-2">

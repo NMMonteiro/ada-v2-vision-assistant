@@ -18,6 +18,11 @@ export interface AdaState {
   transcript: string;
   themeColor: string;
   activeTool?: string;
+  pendingAction?: {
+    type: 'navigation';
+    url: string;
+    label: string;
+  }
 }
 
 export interface ToolDefinition {
